@@ -1,0 +1,73 @@
+C51 COMPILER V9.54   MAIN                                                                  10/23/2025 15:01:45 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main.l
+                    -st) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          /**
+   2           ****************************************************************************************************
+   3           * @file        main.c
+   4           * @author      jna
+   5           * @date        2025-09-26
+   6           * @brief       AT24C02数据存储
+   7           * @email       2944309620@qq.com
+   8           ****************************************************************************************************
+   9           * @attention
+  10           *
+  11           * 实验平台:STC89C52开发板
+  12           *
+  13           ****************************************************************************************************
+  14           */
+  15          #include <REGX52.H>
+  16          #include "LCD1602.h"
+  17          #include "AT24C02.h"
+  18          #include "Delay.h"
+  19          
+  20          void main()
+  21          {
+  22   1              unsigned char code Data[]={0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08};    //要存入的数据
+  23   1              unsigned char Data1,Data2,Data3,Data4,Data5,Data6,Data7,Data8;  //为了读出写入的数据进行显示
+  24   1              LCD_Init();
+  25   1              AT24C02_PageWriteData(0x01,Data);  //按页写数据,把Data数组中的数据写入AT24C02中
+  26   1              Data1=AT24C02_ReadData(0x00);   
+  27   1              Data2=AT24C02_ReadData(0x01);
+  28   1              Data3=AT24C02_ReadData(0x02);
+  29   1              Data4=AT24C02_ReadData(0x03);
+  30   1              Data5=AT24C02_ReadData(0x04);
+  31   1              Data6=AT24C02_ReadData(0x05);
+  32   1              Data7=AT24C02_ReadData(0x06);
+  33   1              Data8=AT24C02_ReadData(0x07);
+  34   1              LCD_ShowHexNum(1,1,Data1,2);
+  35   1              LCD_ShowHexNum(1,4,Data2,2);
+  36   1              LCD_ShowHexNum(1,7,Data3,2);
+  37   1              LCD_ShowHexNum(1,10,Data4,2);
+  38   1              LCD_ShowHexNum(2,1,Data5,2);
+  39   1              LCD_ShowHexNum(2,4,Data6,2);
+  40   1              LCD_ShowHexNum(2,7,Data7,2);
+  41   1              LCD_ShowHexNum(2,10,Data8,2);
+  42   1              while(1)
+  43   1              {
+  44   2                      
+  45   2              }
+  46   1      }
+  47          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    192    ----
+   CONSTANT SIZE    =      8    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+C51 COMPILER V9.54   MAIN                                                                  10/23/2025 15:01:45 PAGE 2   
+
+   DATA SIZE        =   ----       8
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
