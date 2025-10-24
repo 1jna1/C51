@@ -1,0 +1,312 @@
+C51 COMPILER V9.54   DS1302                                                                10/24/2025 10:57:32 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE DS1302
+OBJECT MODULE PLACED IN .\Objects\DS1302.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE DS1302.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\DS13
+                    -02.lst) OBJECT(.\Objects\DS1302.obj)
+
+line level    source
+
+   1          /**
+   2           ****************************************************************************************************
+   3           * @file        main.c
+   4           * @author      jna
+   5           * @date        2025-09-25
+   6           * @brief       DS1302实时时钟-DS1302底层通信+读写时间封装
+   7           * @email       2944309620@qq.com
+   8           ****************************************************************************************************
+   9           * @attention
+  10           *
+  11           * 实验平台:STC89C52开发板
+  12           *
+  13           ****************************************************************************************************
+  14           */
+  15          #include <REGX52.H>
+  16          #include "Delay.h"
+  17          #include "DS1302_Reg.h"
+  18          #include "LCD1602.h"
+  19          
+  20          sbit DS1302_IO=P3^4;
+  21          sbit DS1302_CE=P3^5;
+  22          sbit DS1302_SCLK=P3^6;
+  23          
+  24          void DS1302_Init(void)  //根据数据手册初始化时序
+  25          {
+  26   1              DS1302_CE=0;
+  27   1              DS1302_SCLK=0;
+  28   1      } 
+  29          
+  30          void SCLK_H(void)               //时钟高电平表示
+  31          {
+  32   1              DS1302_SCLK=1;
+  33   1              Delay10us();            //延时也可以去掉,只要满足2MHz以下即可
+  34   1      }
+  35          
+  36          void SCLK_L(void)               //时钟低电平表示
+  37          {
+  38   1              DS1302_SCLK=0;
+  39   1              Delay10us();            //延时也可以去掉,只要满足2MHz以下即可
+  40   1      }
+  41          
+  42          /*  
+  43            * @brief  发送1字节数据
+  44            * @param  Address 命令字  Data 待发数据
+  45            * @retval 无
+  46          */
+  47          void DS1302_Send_Byte(unsigned char Address,unsigned char Data)
+  48          {
+  49   1              unsigned char i;
+  50   1              DS1302_CE=1;
+  51   1              for(i=0;i<8;i++)
+  52   1              {
+  53   2                      DS1302_IO=(Address&(0x01<<i));
+  54   2                  SCLK_H();   
+C51 COMPILER V9.54   DS1302                                                                10/24/2025 10:57:32 PAGE 2   
+
+  55   2                      SCLK_L();
+  56   2              }
+  57   1              
+  58   1              for(i=0;i<8;i++)
+  59   1              {
+  60   2                      DS1302_IO=Data&(0x01<<i);
+  61   2                      SCLK_H();
+  62   2                      SCLK_L();
+  63   2              }
+  64   1              DS1302_CE=0;
+  65   1      }
+  66          
+  67          /*  
+  68            * @brief  接收1字节数据
+  69            * @param  Address 命令字
+  70            * @retval Data 接收的1字节数据
+  71          */
+  72          unsigned char DS1302_Read_Byte(unsigned char Address)
+  73          {
+  74   1              unsigned char i,Data=0x00;
+  75   1              DS1302_CE=1;
+  76   1              for(i=0;i<8;i++)
+  77   1              {               
+  78   2                      DS1302_IO=(Address&(0x01<<i));
+  79   2                  SCLK_H();                   
+  80   2                      SCLK_L();       
+  81   2              }
+  82   1              
+  83   1              for(i=0;i<8;i++)
+  84   1              {
+  85   2                      SCLK_H();
+  86   2                      if(DS1302_IO==1){Data|=(0x01<<i);}      
+  87   2                      SCLK_L();       
+  88   2              }
+  89   1              DS1302_CE=0;
+  90   1              DS1302_IO=0;
+  91   1              return Data;
+  92   1      }
+  93          
+  94          /*  
+  95            * @brief  关闭写保护
+  96            * @param  Data 待发数据
+  97            * @retval 无
+  98          */
+  99          void DS1302_WriteOK(unsigned char Data)
+ 100          {
+ 101   1              DS1302_Send_Byte(WP,Data);
+ 102   1      }
+ 103          
+ 104          /*  
+ 105            * @brief  写秒
+ 106            * @param  Data 待发数据
+ 107            * @retval 无
+ 108          */
+ 109          void DS1302_WriteSeconds(unsigned char Data)
+ 110          {
+ 111   1              DS1302_Send_Byte(Write_Seconds,Data);
+ 112   1      }
+ 113          
+ 114          /*  
+ 115            * @brief  读秒
+ 116            * @param  无
+C51 COMPILER V9.54   DS1302                                                                10/24/2025 10:57:32 PAGE 3   
+
+ 117            * @retval Seconds 秒数
+ 118          */
+ 119          unsigned char DS1302_ReadSeconds(void)
+ 120          {
+ 121   1              unsigned char Data=0x00,Seconds=0;
+ 122   1              Data=DS1302_Read_Byte(Read_Seconds);
+ 123   1              Seconds+=Data&0x0F;  //读低4位秒数(是多少就是多少秒)
+ 124   1              Seconds+=((Data&0x70)>>4)*10; //第4-第6位单位为10秒,这里要x10
+ 125   1              return Seconds;
+ 126   1      }
+ 127          
+ 128          /*  
+ 129            * @brief  写分钟
+ 130            * @param  Data 待发数据
+ 131            * @retval 无
+ 132          */
+ 133          void DS1302_WriteMinutes(unsigned char Data)
+ 134          {
+ 135   1              DS1302_Send_Byte(Write_Minutes,Data);
+ 136   1      }
+ 137          
+ 138          /*  
+ 139            * @brief  读分钟
+ 140            * @param  无
+ 141            * @retval Minutes 分钟
+ 142          */
+ 143          unsigned char DS1302_ReadMinutes(void)
+ 144          {
+ 145   1              unsigned char Data=0x00,Minutes=0;
+ 146   1              Data=DS1302_Read_Byte(Read_Minutes);
+ 147   1              Minutes+=Data&0x0F;
+ 148   1              Minutes+=((Data&0x70)>>4)*10;
+ 149   1              return Minutes;
+ 150   1      }
+ 151          
+ 152          void DS1302_WriteHours(unsigned char Data)  //写小时
+ 153          {
+ 154   1              DS1302_Send_Byte(Write_Hours,Data);
+ 155   1              if((Data&0x80)!=0)
+ 156   1              {
+ 157   2                      if((Data&0x20)!=0)
+ 158   2                      {
+ 159   3                              LCD_ShowString(1,10,"PM");
+ 160   3                      }               
+ 161   2                      else
+ 162   2                      {
+ 163   3                              LCD_ShowString(1,10,"AM");
+ 164   3                      }
+ 165   2              }
+ 166   1      }
+ 167          
+ 168          unsigned char DS1302_ReadHours(void)   //读小时              24小时制度
+ 169          {
+ 170   1              unsigned char Data=0x00,Hours=0;
+ 171   1              Data=DS1302_Read_Byte(Read_Hours);
+ 172   1              Hours+=Data&0x0F;
+ 173   1              Hours+=((Data&0x30)>>4)*10;  //与上同理,见详情见DS1302数据手册
+ 174   1              return Hours;
+ 175   1      }
+ 176          
+ 177          unsigned char DS1302_ReadHours_12(void)   //读小时           12小时制度
+ 178          {
+C51 COMPILER V9.54   DS1302                                                                10/24/2025 10:57:32 PAGE 4   
+
+ 179   1              unsigned char Data=0x00,Hours=0;
+ 180   1              Data=DS1302_Read_Byte(Read_Hours);
+ 181   1              Hours+=Data&0x0F;
+ 182   1              Hours+=((Data&0x10)>>4)*10;  //与上同理,见详情见DS1302数据手册
+ 183   1              return Hours;
+ 184   1      }
+ 185          
+ 186          void DS1302_WriteYears(unsigned char Data)  //写年
+ 187          {
+ 188   1              DS1302_Send_Byte(Write_Years,Data);
+ 189   1      }
+ 190          
+ 191          unsigned char DS1302_ReadYears(void)    //读年
+ 192          {
+ 193   1              unsigned char Data=0x00,Years=0;
+ 194   1              Data=DS1302_Read_Byte(Read_Years);
+ 195   1              Years+=Data&0x0F;
+ 196   1              Years+=((Data&0xF0)>>4)*10;
+ 197   1              return Years;
+ 198   1      }
+ 199          
+ 200          void DS1302_WriteMonths(unsigned char Data)  //写月
+ 201          {
+ 202   1              DS1302_Send_Byte(Write_Months,Data);
+ 203   1      }
+ 204          
+ 205          unsigned char DS1302_ReadMonths(void) //读月
+ 206          {
+ 207   1              unsigned char Data=0x00,Months=0;
+ 208   1              Data=DS1302_Read_Byte(Read_Months);
+ 209   1              Months+=Data&0x0F;
+ 210   1              Months+=((Data&0x10)>>4)*10;
+ 211   1              return Months;
+ 212   1      }
+ 213          
+ 214          void DS1302_WriteDates(unsigned char Data)  //写号
+ 215          {
+ 216   1              DS1302_Send_Byte(Write_Dates,Data);
+ 217   1      }
+ 218          
+ 219          unsigned char DS1302_ReadDates(void)    //读号
+ 220          {
+ 221   1              unsigned char Data=0x00,Dates=0;
+ 222   1              Data=DS1302_Read_Byte(Read_Dates);
+ 223   1              Dates+=Data&0x0F;
+ 224   1              Dates+=((Data&0x30)>>4)*10;
+ 225   1              return Dates;
+ 226   1      }
+ 227          
+ 228          /*  
+ 229            * @brief  设置时间
+ 230            * @param  Year 年(0-99) Month月(1-12) Day 日(1-31) Hour 时(0-23) Minute 分(0-59) Second 秒(0-59)
+ 231            * @retval 无
+ 232          */
+ 233          void DS1302_SetTime(unsigned char Year,unsigned char Month,unsigned char Day,
+ 234                                                  unsigned char Hour,unsigned char Minute,unsigned char Second)
+ 235          {
+ 236   1              DS1302_Init();
+ 237   1              DS1302_WriteOK(0x00);   //关闭写保护
+ 238   1              
+ 239   1              DS1302_WriteYears(Year);
+ 240   1              DS1302_WriteMonths(Month);
+C51 COMPILER V9.54   DS1302                                                                10/24/2025 10:57:32 PAGE 5   
+
+ 241   1              DS1302_WriteDates(Day);
+ 242   1              
+ 243   1              DS1302_WriteHours(Hour);
+ 244   1              DS1302_WriteMinutes(Minute);
+ 245   1              DS1302_WriteSeconds(Second);
+ 246   1              
+ 247   1              DS1302_WriteOK(0x80);   //开启写保护
+ 248   1      }
+ 249          
+ 250          /*  
+ 251            * @brief  读时间 24时制
+ 252            * @param  Year 年(0-99) Month月(1-12) Day 日(1-31) Hour 时(0-23) Minute 分(0-59) Second 秒(0-59)
+ 253            * @retval 无
+ 254          */
+ 255          void DS1302_ReadTime(unsigned char *Year,unsigned char *Month,unsigned char *Day,
+ 256                                                  unsigned char *Hour,unsigned char *Minute,unsigned char *Second)
+ 257          {
+ 258   1              *Year=DS1302_ReadYears();
+ 259   1              *Month=DS1302_ReadMonths();
+ 260   1              *Day=DS1302_ReadDates();
+ 261   1              *Hour=DS1302_ReadHours();
+ 262   1              *Minute=DS1302_ReadMinutes();
+ 263   1              *Second=DS1302_ReadSeconds();
+ 264   1      }
+ 265          
+ 266          /*  
+ 267            * @brief  读时间 12小时制
+ 268            * @param  Year 年(0-99) Month月(1-12) Day 日(1-31) Hour 时(0-23) Minute 分(0-59) Second 秒(0-59)
+ 269            * @retval 无
+ 270          */
+ 271          void DS1302_ReadTime_12(unsigned char *Year,unsigned char *Month,unsigned char *Day,
+ 272                                                  unsigned char *Hour,unsigned char *Minute,unsigned char *Second)
+ 273          {
+ 274   1              *Year=DS1302_ReadYears();
+ 275   1              *Month=DS1302_ReadMonths();
+ 276   1              *Day=DS1302_ReadDates();
+ 277   1              *Hour=DS1302_ReadHours_12();
+ 278   1              *Minute=DS1302_ReadMinutes();
+ 279   1              *Second=DS1302_ReadSeconds();
+ 280   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    704    ----
+   CONSTANT SIZE    =      6    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      56
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
