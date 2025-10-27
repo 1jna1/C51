@@ -1,0 +1,96 @@
+C51 COMPILER V9.54   DS18B20_COMMUNICATION                                                 10/08/2025 14:48:34 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE DS18B20_COMMUNICATION
+OBJECT MODULE PLACED IN .\Objects\DS18B20_Communication.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE DS18B20_Communication.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(
+                    -.\Listings\DS18B20_Communication.lst) OBJECT(.\Objects\DS18B20_Communication.obj)
+
+line level    source
+
+   1          /**
+   2           ****************************************************************************************************
+   3           * @file        DS18B20_Communication.c
+   4           * @author      jna
+   5           * @date        2025-10-08
+   6           * @brief       DS18B20测温度(底层通信,发1,0,发送字节数据)
+   7           * @email       2944309620@qq.com
+   8           ****************************************************************************************************
+   9           * @attention
+  10           *
+  11           * 实验平台:STC89C52开发板
+  12           *
+  13           ****************************************************************************************************
+  14           */
+  15          #include <REGX52.H>
+  16          
+  17          #define DS18B20_IO  P3_7
+  18          
+  19          /*  
+  20              * @brief  DS18B20发送1
+  21              * @param  无
+  22              * @retval 无
+  23          */ 
+  24          void DS18B20_MasterWrite_1(void)
+  25          {
+  26   1              unsigned char i;        
+  27   1              
+  28   1              DS18B20_IO=0;
+  29   1              
+  30   1              i = 2;
+  31   1              while (--i);  //延时10us
+  32   1              
+  33   1              DS18B20_IO=1;
+  34   1              
+  35   1              i = 29;
+  36   1              while (--i);  //延时70us
+  37   1      }
+  38          
+  39          /*  
+  40              * @brief  DS18B20发送0
+  41              * @param  无
+  42              * @retval 无
+  43          */
+  44          void DS18B20_MasterWrite_0(void)
+  45          {
+  46   1              unsigned char i;
+  47   1              
+  48   1              DS18B20_IO=0;
+  49   1              
+  50   1              i = 29;
+  51   1              while (--i);  //延时70us
+  52   1              
+  53   1              DS18B20_IO=1;
+  54   1              
+C51 COMPILER V9.54   DS18B20_COMMUNICATION                                                 10/08/2025 14:48:34 PAGE 2   
+
+  55   1      }
+  56          
+  57          /*  
+  58              * @brief  DS18B20发送1字节
+  59              * @param  Byte,要发送的字节数据
+  60              * @retval 无
+  61          */
+  62          void DS18B20_Master_Tx_Byte(unsigned char Byte)
+  63          {
+  64   1              unsigned char i;
+  65   1              for(i=0;i<8;i++)
+  66   1              {
+  67   2                      if((Byte&(0x01<<i))!=0){DS18B20_MasterWrite_1();}
+  68   2                      else {DS18B20_MasterWrite_0();}
+  69   2              }
+  70   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     62    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
