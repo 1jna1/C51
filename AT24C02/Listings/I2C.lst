@@ -1,0 +1,121 @@
+C51 COMPILER V9.54   I2C                                                                   10/23/2025 15:11:22 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE I2C
+OBJECT MODULE PLACED IN .\Objects\I2C.obj
+COMPILER INVOKED BY: D:\Keil5\C51\BIN\C51.EXE I2C.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\I2C.lst
+                    -) OBJECT(.\Objects\I2C.obj)
+
+line level    source
+
+   1          /**
+   2           ****************************************************************************************************
+   3           * @file        main.c
+   4           * @author      jna
+   5           * @date        2025-09-26
+   6           * @brief       AT24C02数据存储-底层I2C通信
+   7           * @email       2944309620@qq.com
+   8           ****************************************************************************************************
+   9           * @attention
+  10           *
+  11           * 实验平台:STC89C52开发板
+  12           *
+  13           ****************************************************************************************************
+  14           */
+  15          
+  16          #include <REGX52.H>
+  17          
+  18          sbit SCL=P2^1;
+  19          sbit SDA=P2^0;
+  20          
+  21          void SCL_W(unsigned char Bit)
+  22          {
+  23   1              SCL=Bit;
+  24   1      }
+  25          
+  26          void SDA_W(unsigned char Bit)
+  27          {
+  28   1              SDA=Bit;
+  29   1      }
+  30          
+  31          unsigned char SDA_R(void)
+  32          {
+  33   1              unsigned char Bit;
+  34   1              Bit=SDA;
+  35   1              return Bit;
+  36   1      }
+  37          
+  38          void I2C_Start(void)
+  39          {
+  40   1              SDA_W(1);
+  41   1              SCL_W(1);
+  42   1              SDA_W(0);
+  43   1              SCL_W(0);
+  44   1      }
+  45          
+  46          void I2C_Stop(void)
+  47          {
+  48   1              SDA_W(0);
+  49   1              SCL_W(1);
+  50   1              SDA_W(1);
+  51   1      }
+  52          
+  53          void I2C_SendByte(unsigned char Byte)
+  54          {
+C51 COMPILER V9.54   I2C                                                                   10/23/2025 15:11:22 PAGE 2   
+
+  55   1              unsigned char i;
+  56   1              for(i=0;i<8;i++)
+  57   1              {
+  58   2                      SDA_W(Byte&(0x80>>i));
+  59   2                      SCL_W(1);
+  60   2                      SCL_W(0);
+  61   2              }
+  62   1      }
+  63          
+  64          unsigned char I2C_ReadByte(void)
+  65          {
+  66   1              unsigned char i,Data=0x00;
+  67   1              SDA_W(1);
+  68   1              for(i=0;i<8;i++)
+  69   1              {
+  70   2                      SCL_W(1);
+  71   2                      if(SDA_R()==1)
+  72   2                      {
+  73   3                              Data|=(0x80>>i);
+  74   3                      }
+  75   2                      SCL_W(0);
+  76   2              }
+  77   1              return Data;
+  78   1      }
+  79          
+  80          void I2C_SendAck(unsigned char Bit)
+  81          {
+  82   1              SDA_W(Bit);
+  83   1              SCL_W(1);
+  84   1              SCL_W(0);
+  85   1      }
+  86          
+  87          unsigned char I2C_ReceiveAck(void)
+  88          {
+  89   1              unsigned char Ack;
+  90   1              SDA_W(1);
+  91   1              SCL_W(1);
+  92   1              Ack=SDA_R();
+  93   1              SCL_W(0);
+  94   1              return Ack;
+  95   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    157    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
